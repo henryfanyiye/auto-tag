@@ -1,10 +1,7 @@
 import {queryRule} from '../service/rule.js';
-import {postClient} from '../libs/request.js';
 import {getCache} from '../libs/cache.js';
 import {taskCacheKey} from '../constant/cacheEnum.js';
-import {mysqlClient} from '../libs/mysqlClient.js';
-import {Rule} from '../ruleEngine/rule.js';
-import {RuleEngine} from '../ruleEngine/ruleEngine.js';
+import {attributesVerify, sqlVerify, functionVerify} from '../utils/condition.js';
 
 export const tagFollow = (data) => {
     /**
@@ -24,7 +21,9 @@ export const tagFollow = (data) => {
 };
 
 const ruleVerify = async (taskId, data) => {
+    let _rule;
     queryRule(taskId).then(rule => {
+        _rule = rule;
         switch (rule.type){
             case 'attributes':
                 return attributesVerify(rule, data);
@@ -34,36 +33,5 @@ const ruleVerify = async (taskId, data) => {
                 return functionVerify(rule, data);
         }
     }).then(res => {
-    });
-};
-
-const attributesVerify = (rule, data) => {
-    const r = new Rule(
-        (rule) => eval(rule.condition),
-        (rule) => rule.action
-    );
-
-    const ruleEngine = new RuleEngine(r);
-
-    return ruleEngine.run(data);
-};
-
-const sqlVerify = (rule, data) => {
-    return mysqlClient.query(rule.condition, []).then(res => {
-        if (res[0].length > 0) {
-            return true;
-        } else {
-            return false;
-        }
-    });
-};
-
-const functionVerify = (rule, data) => {
-    return postClient(rule.condition, data).then(res => {
-        if (res) {
-            return rule.action;
-        } else {
-            return false;
-        }
     });
 };
