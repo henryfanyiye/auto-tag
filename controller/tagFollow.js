@@ -39,7 +39,7 @@ const ruleVerify = async (taskId, data) => {
 
 const attributesVerify = (rule, data) => {
     const r = new Rule(
-        (rule) => rule.content,
+        (rule) => eval(rule.condition),
         (rule) => rule.action
     );
 
@@ -49,19 +49,21 @@ const attributesVerify = (rule, data) => {
 };
 
 const sqlVerify = (rule, data) => {
-    return mysqlClient.query(rule.content, []).then(res => {
-        if (res.length > 0) {
+    return mysqlClient.query(rule.condition, []).then(res => {
+        if (res[0].length > 0) {
             return true;
+        } else {
+            return false;
         }
-        return false;
     });
 };
 
 const functionVerify = (rule, data) => {
-    return postClient(rule.action, data).then(res => {
+    return postClient(rule.condition, data).then(res => {
         if (res) {
             return rule.action;
+        } else {
+            return false;
         }
-        return false;
     });
 };
